@@ -1,0 +1,50 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+
+# Android
+.gradle/
+local.properties
+*.keystore
+*.jks
+captures/
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# iOS
+.generated/
+Flutter/App.framework
+Flutter/Flutter.framework
+Flutter/Generated.xcconfig
+Flutter/flutter_export_environment.sh
+ServiceDefinitions.json
+Runner/Generated.xcconfig
+
+# Python/Django
+__pycache__/
+*.py[cod]
+*$py.class
+local_settings.py
+db.sqlite3
+.env
+staticfiles/
+media/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.ipr
+*.iws
+
+# System Files
+.DS_Store
+Thumbs.db
+*.log
