@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import 'product_details_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -101,6 +102,31 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildProductGrid() {
+    final marketProvider = Provider.of<MarketProvider>(context);
+    
+    // In a real app, products would come from the provider.
+    // For now, let's create a small mock list to demonstrate filtering.
+    final mockProducts = [
+      {'id': '1', 'name': 'Milho Branco', 'cat': '1', 'price': '1.550 MZN'},
+      {'id': '2', 'name': 'Feijão Catarino', 'cat': '2', 'price': '2.100 MZN'},
+      {'id': '3', 'name': 'Alface Fresca', 'cat': '3', 'price': '450 MZN'},
+      {'id': '4', 'name': 'Maçã Nacional', 'cat': '4', 'price': '800 MZN'},
+      {'id': '5', 'name': 'Arroz de Chokwe', 'cat': '1', 'price': '1.800 MZN'},
+      {'id': '6', 'name': 'Tomate Cereja', 'cat': '3', 'price': '600 MZN'},
+    ];
+
+    final filteredProducts = mockProducts.where((p) {
+      final matchesCategory = _selectedCategory == null || p['cat'] == _selectedCategory;
+      final matchesSearch = _searchQuery.isEmpty || p['name']!.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    if (filteredProducts.isEmpty) {
+      return const Center(
+        child: Text('Nenhum produto encontrado nesta categoria.', style: TextStyle(color: AppTheme.secondaryText)),
+      );
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -109,14 +135,26 @@ class _ShopScreenState extends State<ShopScreen> {
         crossAxisSpacing: 16,
         childAspectRatio: 0.7,
       ),
-      itemCount: 6, // Mock count
+      itemCount: filteredProducts.length,
       itemBuilder: (context, index) {
-        return _buildShopProductCard();
+        final product = filteredProducts[index];
+        final productId = product['id']!;
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetailsScreen(productId: productId),
+              ),
+            );
+          },
+          child: _buildShopProductCard(context, productId, product['name']!, product['price']!),
+        );
       },
     );
   }
 
-  Widget _buildShopProductCard() {
+  Widget _buildShopProductCard(BuildContext context, String productId, String name, String price) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -159,18 +197,18 @@ class _ShopScreenState extends State<ShopScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Milho Branco de Cuamba',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.darkText),
+                Text(
+                  name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.darkText),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 const Text('Machamba do Mateus', style: TextStyle(fontSize: 10, color: AppTheme.secondaryText)),
                 const SizedBox(height: 6),
-                const Text(
-                  '1.550 MZN',
-                  style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14),
+                Text(
+                  price,
+                  style: const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Text('/ Saco 50kg', style: TextStyle(fontSize: 10, color: AppTheme.secondaryText)),
                 const SizedBox(height: 10),
@@ -178,7 +216,16 @@ class _ShopScreenState extends State<ShopScreen> {
                   width: double.infinity,
                   height: 32,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Provider.of<MarketProvider>(context, listen: false).addToCart(productId);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Adicionado ao carrinho!'),
+                          duration: Duration(seconds: 1),
+                          backgroundColor: AppTheme.primaryGreen,
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),

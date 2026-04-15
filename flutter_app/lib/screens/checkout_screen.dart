@@ -10,18 +10,19 @@ class CheckoutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final marketProvider = Provider.of<MarketProvider>(context);
+    final navProvider = Provider.of<NavigationProvider>(context);
     final cart = marketProvider.cart;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Carrinho', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold)),
       ),
-      body: cart.isEmpty ? _buildEmptyCart(context) : _buildCartList(context, marketProvider),
+      body: cart.isEmpty ? _buildEmptyCart(context, navProvider) : _buildCartList(context, marketProvider),
       bottomNavigationBar: cart.isEmpty ? null : _buildCheckoutBar(context, marketProvider),
     );
   }
 
-  Widget _buildEmptyCart(BuildContext context) {
+  Widget _buildEmptyCart(BuildContext context, NavigationProvider navProvider) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -37,7 +38,7 @@ class CheckoutScreen extends StatelessWidget {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-              // Usually go back to shop
+              navProvider.goToMarket();
             },
             child: const Text('Explorar Mercado'),
           ),
@@ -120,6 +121,25 @@ class CheckoutScreen extends StatelessWidget {
               Text('232.50 MZN', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
+          const SizedBox(height: 16),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Método de Pagamento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 45,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildPaymentOption('M-Pesa', 'assets/icons/mpesa.png'),
+                _buildPaymentOption('e-Mola', 'assets/icons/emola.png'),
+                _buildPaymentOption('m-Kesh', 'assets/icons/mkesh.png'),
+                _buildPaymentOption('BIM', 'assets/icons/bim.png'),
+                _buildPaymentOption('BCI', 'assets/icons/bci.png'),
+              ],
+            ),
+          ),
           const Divider(height: 32),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -138,6 +158,24 @@ class CheckoutScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption(String label, String iconPath) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppTheme.borderColor),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey[50],
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.darkText),
+        ),
       ),
     );
   }

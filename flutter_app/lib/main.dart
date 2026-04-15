@@ -13,6 +13,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MarketProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: const AgroSusteApp(),
     ),
@@ -33,33 +34,28 @@ class AgroSusteApp extends StatelessWidget {
   }
 }
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});
 
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ShopScreen(),
-    const CheckoutScreen(),
-    const ProfileScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    ShopScreen(),
+    CheckoutScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final navProvider = Provider.of<NavigationProvider>(context);
+
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: navProvider.currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        currentIndex: navProvider.currentIndex,
+        onTap: (index) => navProvider.setIndex(index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppTheme.primaryGreen,
         unselectedItemColor: AppTheme.secondaryText,
