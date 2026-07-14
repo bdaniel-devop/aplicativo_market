@@ -2,10 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../models/app_models.dart';
 import 'auth_screen.dart';
+import 'edit_profile_screen.dart';
+import 'order_history_screen.dart';
+import 'inventory_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'extensionist_dashboard_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_use_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.isAuthenticated) {
+        Provider.of<OrderProvider>(context, listen: false).fetchOrders();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +40,8 @@ class ProfileScreen extends StatelessWidget {
     }
 
     final user = authProvider.user!;
+    final orderProvider = Provider.of<OrderProvider>(context);
+    final activeOrders = orderProvider.ordersForBuyer(user.id).where((o) => o.status == 'pendente' || o.status == 'pago').length;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,20 +57,35 @@ class ProfileScreen extends StatelessWidget {
           children: [
             _buildUserHeader(user),
             const SizedBox(height: 24),
-            _buildStatsGrid(user),
+            _buildStatsGrid(user, activeOrders),
             const SizedBox(height: 32),
             _buildMenuSection('Núcleo Operacional', [
-              _buildMenuItem(Icons.person_outline, 'Meus Dados'),
-              _buildMenuItem(Icons.shopping_bag_outlined, 'Histórico de Compras'),
-              _buildMenuItem(Icons.payment_outlined, 'Canais de Pagamento'),
+              _buildMenuItem(context, Icons.person_outline, 'Meus Dados', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()))),
+              _buildMenuItem(context, Icons.shopping_bag_outlined, 'Histórico de Compras', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()))),
             ]),
-            const SizedBox(height: 24),
-            if (user.role == 'produtor' || user.role == 'administrador')
+            if (user.role == UserRole.seller || user.role == UserRole.admin) ...[
+              const SizedBox(height: 24),
               _buildMenuSection('Gestão Profissional', [
-                _buildMenuItem(Icons.inventory_2_outlined, 'Meu Inventário'),
-                _buildMenuItem(Icons.analytics_outlined, 'Relatórios de Vendas'),
-                _buildMenuItem(Icons.verified_user_outlined, 'Documentação Oficial'),
+                _buildMenuItem(context, Icons.inventory_2_outlined, 'Meu Inventário', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryScreen()))),
               ]),
+            ],
+            if (user.role == UserRole.admin || user.role == UserRole.strategicPartner) ...[
+              const SizedBox(height: 24),
+              _buildMenuSection('Administração', [
+                _buildMenuItem(context, Icons.admin_panel_settings_outlined, 'Painel Administrativo', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()))),
+              ]),
+            ],
+            if (user.role == UserRole.extensionist) ...[
+              const SizedBox(height: 24),
+              _buildMenuSection('Extensão Rural', [
+                _buildMenuItem(context, Icons.groups_outlined, 'Painel do Extensionista', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExtensionistDashboardScreen()))),
+              ]),
+            ],
+            const SizedBox(height: 24),
+            _buildMenuSection('Legal', [
+              _buildMenuItem(context, Icons.privacy_tip_outlined, 'Política de Privacidade', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()))),
+              _buildMenuItem(context, Icons.description_outlined, 'Termos de Uso', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfUseScreen()))),
+            ]),
           ],
         ),
       ),
@@ -60,13 +101,10 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const Icon(Icons.lock_person_outlined, size: 64, color: AppTheme.secondaryText),
             const SizedBox(height: 24),
-            const Text(
-              'Acesso Necessário',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkText, fontFamily: 'Poppins'),
-            ),
+            const Text('Acesso Necessário', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkText, fontFamily: 'Poppins')),
             const SizedBox(height: 12),
             const Text(
-              'Faça login para gerir seu perfil, ver encomendas e aceder a ferramentas profissionais.',
+              'Faça login para gerir o seu perfil, ver encomendas e aceder a ferramentas profissionais.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppTheme.secondaryText),
             ),
@@ -84,7 +122,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserHeader(user) {
+  Widget _buildUserHeader(Profile user) {
     return Row(
       children: [
         Container(
@@ -98,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              user.fullName[0],
+              user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
               style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
@@ -108,28 +146,19 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                user.fullName,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkText, fontFamily: 'Poppins'),
-              ),
+              Text(user.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkText, fontFamily: 'Poppins')),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  user.role.toUpperCase(),
-                  style: const TextStyle(color: AppTheme.primaryGreen, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
-                ),
+                decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                child: Text(user.role.toUpperCase(), style: const TextStyle(color: AppTheme.primaryGreen, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.verified, color: Colors.blue, size: 14),
+                  Icon(user.isApproved ? Icons.verified : Icons.hourglass_empty, color: user.isApproved ? Colors.blue : Colors.orange, size: 14),
                   const SizedBox(width: 4),
-                  const Text('Perfil Validado', style: TextStyle(color: AppTheme.secondaryText, fontSize: 12)),
+                  Text(user.isApproved ? 'Perfil Validado' : 'Aguarda aprovação', style: const TextStyle(color: AppTheme.secondaryText, fontSize: 12)),
                 ],
               ),
             ],
@@ -139,7 +168,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsGrid(user) {
+  Widget _buildStatsGrid(Profile user, int activeOrders) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -149,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
       crossAxisSpacing: 12,
       children: [
         _buildStatCard('Saldo Disponível', '${user.balance.toStringAsFixed(2)} MZN', Icons.account_balance_wallet_outlined),
-        _buildStatCard('Encomendas Ativas', '3', Icons.local_shipping_outlined),
+        _buildStatCard('Encomendas Ativas', '$activeOrders', Icons.local_shipping_outlined),
       ],
     );
   }
@@ -157,11 +186,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderColor),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.borderColor)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -181,31 +206,22 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.secondaryText, letterSpacing: 0.5),
-          ),
+          child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.secondaryText, letterSpacing: 0.5)),
         ),
         Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
-          ),
-          child: Column(
-            children: items,
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.borderColor)),
+          child: Column(children: items),
         ),
       ],
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title) {
+  Widget _buildMenuItem(BuildContext context, IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.darkText, size: 22),
       title: Text(title, style: const TextStyle(fontSize: 14, color: AppTheme.darkText)),
       trailing: const Icon(Icons.chevron_right, color: AppTheme.borderColor),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

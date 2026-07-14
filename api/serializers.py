@@ -27,13 +27,20 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = '__all__'
+        fields = ['id', 'product', 'name', 'price', 'quantity', 'unit']
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    items = OrderItemSerializer(many=True)
     class Meta:
         model = Order
         fields = '__all__'
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        order = Order.objects.create(**validated_data)
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+        return order
 
 class ActivityLogSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='profile.full_name', read_only=True)

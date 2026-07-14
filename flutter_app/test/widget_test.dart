@@ -1,30 +1,39 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Smoke test: garante que a navegação principal constrói sem excepções.
+// Usa runAsync porque os ecrãs despoletam chamadas de rede reais (Dio) no
+// arranque; fora do runAsync o binding de testes rejeita temporizadores reais
+// pendentes.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:flutter_app/main.dart';
+import 'package:flutter_app/providers/app_providers.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('MainNavigation mostra as quatro secções principais', (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => AuthProvider()),
+            ChangeNotifierProvider(create: (_) => MarketProvider()),
+            ChangeNotifierProvider(create: (_) => OrderProvider()),
+            ChangeNotifierProvider(create: (_) => RatingsProvider()),
+            ChangeNotifierProvider(create: (_) => NotificationsProvider()),
+            ChangeNotifierProvider(create: (_) => ExtensionistProvider()),
+            ChangeNotifierProvider(create: (_) => LanguageProvider()),
+            ChangeNotifierProvider(create: (_) => NavigationProvider()),
+          ],
+          child: const MaterialApp(home: MainNavigation()),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Início'), findsOneWidget);
+    expect(find.text('Mercado'), findsOneWidget);
+    expect(find.text('Carrinho'), findsOneWidget);
+    expect(find.text('Perfil'), findsOneWidget);
   });
 }

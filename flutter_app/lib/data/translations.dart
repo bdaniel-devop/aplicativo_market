@@ -1,0 +1,53 @@
+/// Dicionário pt/en reduzido, portado de translations.ts do site.
+/// Cobre a navegação e os ecrãs desta fase; ver plano para expansão futura.
+const Map<String, Map<String, String>> appTranslations = {
+  'nav_home': {'pt': 'Início', 'en': 'Home'},
+  'nav_shop': {'pt': 'Mercado', 'en': 'Market'},
+  'nav_cart': {'pt': 'Carrinho', 'en': 'Cart'},
+  'nav_profile': {'pt': 'Perfil', 'en': 'Profile'},
+  'welcome_back': {'pt': 'Bem-vindo de volta', 'en': 'Welcome back'},
+  'create_account': {'pt': 'Crie sua conta', 'en': 'Create your account'},
+  'login_subtitle': {'pt': 'Acesse o ecossistema AgroSuste Moçambique', 'en': 'Access the AgroSuste Mozambique ecosystem'},
+  'register_subtitle': {'pt': 'Faça parte da maior rede agrícola nacional', 'en': 'Join the largest national agri network'},
+  'email_or_phone': {'pt': 'Email ou Telefone', 'en': 'Email or Phone'},
+  'password': {'pt': 'Palavra-passe', 'en': 'Password'},
+  'confirm_password': {'pt': 'Confirmar Palavra-passe', 'en': 'Confirm Password'},
+  'full_name': {'pt': 'Nome Completo', 'en': 'Full Name'},
+  'login_button': {'pt': 'Entrar no Sistema', 'en': 'Sign In'},
+  'register_button': {'pt': 'Confirmar Registo', 'en': 'Confirm Registration'},
+  'no_account': {'pt': 'Não tem conta? Registar agora', 'en': "Don't have an account? Register now"},
+  'has_account': {'pt': 'Já possui credenciais? Fazer Login', 'en': 'Already have an account? Sign in'},
+  'personal_data': {'pt': 'Dados Pessoais', 'en': 'Personal Data'},
+  'type_and_role': {'pt': 'Tipo e Papel', 'en': 'Type and Role'},
+  'finalization': {'pt': 'Finalização', 'en': 'Finalization'},
+  'province': {'pt': 'Província', 'en': 'Province'},
+  'district': {'pt': 'Distrito', 'en': 'District'},
+  'posto': {'pt': 'Posto Administrativo', 'en': 'Administrative Post'},
+  'localidade': {'pt': 'Localidade/Bairro', 'en': 'Locality/Neighbourhood'},
+  'cart_empty': {'pt': 'O seu carrinho está vazio', 'en': 'Your cart is empty'},
+  'explore_market': {'pt': 'Explorar Mercado', 'en': 'Explore Market'},
+  'subtotal': {'pt': 'Subtotal', 'en': 'Subtotal'},
+  'commission': {'pt': 'Comissão (5%)', 'en': 'Commission (5%)'},
+  'total': {'pt': 'Total', 'en': 'Total'},
+  'payment_method': {'pt': 'Método de Pagamento', 'en': 'Payment Method'},
+  'finish_order': {'pt': 'Finalizar Encomenda', 'en': 'Finish Order'},
+  'delivery_details': {'pt': 'Dados de Entrega', 'en': 'Delivery Details'},
+  'add_to_cart': {'pt': 'Adicionar ao Carrinho', 'en': 'Add to Cart'},
+  'search_products': {'pt': 'Pesquisar colheitas...', 'en': 'Search harvests...'},
+  'my_inventory': {'pt': 'Meu Inventário', 'en': 'My Inventory'},
+  'order_history': {'pt': 'Histórico de Compras', 'en': 'Order History'},
+  'logout': {'pt': 'Sair', 'en': 'Logout'},
+  'admin_panel': {'pt': 'Painel Administrativo', 'en': 'Admin Panel'},
+  'extensionist_panel': {'pt': 'Painel do Extensionista', 'en': 'Extensionist Panel'},
+  // Categorias — mesmas chaves de tradução usadas em constants.tsx/translations.ts do site.
+  'cat_cereals': {'pt': 'Cereais', 'en': 'Cereals'},
+  'cat_legumes': {'pt': 'Leguminosas', 'en': 'Legumes'},
+  'cat_veg': {'pt': 'Hortícolas', 'en': 'Vegetables'},
+  'cat_fruit': {'pt': 'Frutas', 'en': 'Fruit'},
+  'cat_roots': {'pt': 'Raízes', 'en': 'Roots'},
+  'cat_inputs': {'pt': 'Insumos', 'en': 'Farm Inputs'},
+};
+
+String translate(String key, String lang) {
+  return appTranslations[key]?[lang] ?? key;
+}
