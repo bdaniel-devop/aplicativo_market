@@ -136,7 +136,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await authProvider.login(_loginIdentifierController.text.trim(), _loginPasswordController.text);
       if (mounted) _navigateAfterAuth(authProvider);
     } catch (e) {
-      _showError('Credenciais inválidas ou servidor indisponível.');
+      _showError(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 

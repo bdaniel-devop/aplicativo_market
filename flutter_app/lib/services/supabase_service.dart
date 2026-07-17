@@ -69,22 +69,29 @@ class SupabaseService {
   /// Login por email ou telefone (resolve telefone→email via RPC
   /// `get_email_by_phone`, mesmo nome/parâmetro usado pelo site).
   Future<Profile> login(String identifier, String password) async {
-    String email = identifier.trim();
+    String email = identifier.trim().toLowerCase();
     if (!email.contains('@')) {
       final bareDigits = identifier.replaceAll(RegExp(r'\D'), '');
       final found = await _client.rpc('get_email_by_phone', params: {'p_phone': bareDigits});
       if (found == null || (found is String && found.isEmpty)) {
-        throw Exception('Não encontrámos nenhuma conta com este telefone.');
+        throw Exception('Não encontrámos nenhuma conta com este telefone (procurámos por "$bareDigits").');
       }
-      email = found as String;
+      email = (found as String).toLowerCase();
     }
 
-    final res = await _client.auth.signInWithPassword(email: email, password: password);
-    final user = res.user;
-    if (user == null) {
-      throw Exception('Credenciais inválidas.');
+    try {
+      final res = await _client.auth.signInWithPassword(email: email, password: password);
+      final user = res.user;
+      if (user == null) {
+        throw Exception('Credenciais inválidas.');
+      }
+      return await getProfile(user.id);
+    } on AuthException catch (e) {
+      // Propaga a mensagem real do Supabase (ex: "Invalid login credentials",
+      // "Email not confirmed") em vez de a esconder — essencial para
+      // perceber PORQUE falhou, já que a conta já existe no Supabase.
+      throw Exception('Supabase: ${e.message}');
     }
-    return await getProfile(user.id);
   }
 
   Future<void> logout() => _client.auth.signOut();
