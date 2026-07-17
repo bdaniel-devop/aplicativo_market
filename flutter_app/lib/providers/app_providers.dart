@@ -23,10 +23,21 @@ class AuthProvider extends ChangeNotifier {
   Future<void> autoLogin() async {
     final session = _service.currentSession;
     if (session != null) {
-      try {
-        _profile = await _service.getProfile(session.user.id);
-      } catch (_) {
-        _profile = null;
+      // Com retry: a rede/DNS pode ainda não estar pronta nos primeiros
+      // segundos após abrir a app — sem isto, um utilizador com sessão
+      // válida aparecia como "deslogado" só por causa desse atraso.
+      const maxAttempts = 3;
+      for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          _profile = await _service.getProfile(session.user.id);
+          break;
+        } catch (_) {
+          if (attempt == maxAttempts) {
+            _profile = null;
+          } else {
+            await Future.delayed(Duration(milliseconds: 700 * attempt));
+          }
+        }
       }
     }
     _initialized = true;
@@ -112,26 +123,39 @@ class MarketProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _profiles = await _service.getProfiles();
-      final rawProducts = await _service.getProducts();
-      // Junta o nome do produtor no cliente (mesma abordagem do site: sem join no Supabase).
-      _products = rawProducts
-          .map((p) => Product.fromJson(
-                {
-                  'id': p.id,
-                  'producer_id': p.producerId,
-                  'category_id': p.categoryId,
-                  'name': p.name,
-                  'description': p.description,
-                  'price': p.price,
-                  'unit': p.unit,
-                  'stock': p.stock,
-                  'images': p.images,
-                  'is_dried': p.isDried,
-                },
-                producerName: profileById(p.producerId)?.fullName,
-              ))
-          .toList();
+      // Logo a seguir a instalar/abrir a app, o Android por vezes ainda não
+      // tem a rede/DNS totalmente pronta (SocketException "Failed host
+      // lookup" nos primeiros segundos) — sem retry, isto ficava vazio
+      // para sempre até o utilizador puxar para actualizar manualmente.
+      const maxAttempts = 3;
+      for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          _profiles = await _service.getProfiles();
+          final rawProducts = await _service.getProducts();
+          // Junta o nome do produtor no cliente (mesma abordagem do site: sem join no Supabase).
+          _products = rawProducts
+              .map((p) => Product.fromJson(
+                    {
+                      'id': p.id,
+                      'producer_id': p.producerId,
+                      'category_id': p.categoryId,
+                      'name': p.name,
+                      'description': p.description,
+                      'price': p.price,
+                      'unit': p.unit,
+                      'stock': p.stock,
+                      'images': p.images,
+                      'is_dried': p.isDried,
+                    },
+                    producerName: profileById(p.producerId)?.fullName,
+                  ))
+              .toList();
+          break;
+        } catch (e) {
+          if (attempt == maxAttempts) rethrow;
+          await Future.delayed(Duration(milliseconds: 700 * attempt));
+        }
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
