@@ -243,7 +243,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível criar a encomenda. Tente novamente.'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Não foi possível criar a encomenda: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

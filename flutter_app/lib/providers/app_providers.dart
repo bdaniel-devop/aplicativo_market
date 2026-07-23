@@ -269,16 +269,28 @@ class OrderProvider extends ChangeNotifier {
     String? province,
     String? district,
   }) async {
-    final order = await _service.createOrder(
-      buyerId: buyerId,
-      buyerName: buyerName,
-      buyerPhone: buyerPhone,
-      items: items,
-      paymentMethod: paymentMethod,
-      province: province,
-      district: district,
-    );
-    _orders.insert(0, order);
+    // Mesma protecção usada em fetchMarketData: dados móveis falham mais
+    // vezes por instabilidade transitória de rede/DNS do que WiFi/banda larga.
+    const maxAttempts = 3;
+    Order? order;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        order = await _service.createOrder(
+          buyerId: buyerId,
+          buyerName: buyerName,
+          buyerPhone: buyerPhone,
+          items: items,
+          paymentMethod: paymentMethod,
+          province: province,
+          district: district,
+        );
+        break;
+      } catch (e) {
+        if (attempt == maxAttempts) rethrow;
+        await Future.delayed(Duration(milliseconds: 700 * attempt));
+      }
+    }
+    _orders.insert(0, order!);
     notifyListeners();
     return order;
   }
